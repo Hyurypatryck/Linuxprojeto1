@@ -1,43 +1,26 @@
-#!/bin/bash
+sudo apt update
+sudo apt install ansible -y
 
-# Excluir diretórios, arquivos, grupos e usuários criados anteriormente
-rm -rf /diretorio1 /diretorio2 /publico
-userdel -r usuario1
-userdel -r usuario2
-groupdel grupo1
-groupdel grupo2
+[webserver]
+192.168.1.100 ansible_user=seu_usuario ansible_ssh_private_key_file=~/.ssh/id_rsa
 
-# Criar diretórios
-mkdir /diretorio1 /diretorio2 /publico
+- hosts: webserver
+  become: yes
+  tasks:
+    - name: Instalar Apache
+      apt:
+        name: apache2
+        state: present
 
-# Definir o dono dos diretórios como root
-chown root:root /diretorio1 /diretorio2 /publico
+    - name: Iniciar o serviço Apache
+      service:
+        name: apache2
+        state: started
+        enabled: yes
 
-# Criar grupos
-groupadd grupo1
-groupadd grupo2
+    - name: Copiar arquivo de configuração do site
+      copy:
+        src: /caminho/para/seu/index.html
+        dest: /var/www/html/index.html
 
-# Criar usuários e adicionar aos grupos
-useradd -m -G grupo1 usuario1
-useradd -m -G grupo2 usuario2
-
-# Definir permissões
-chmod 777 /publico
-chmod 770 /diretorio1
-chmod 770 /diretorio2
-
-# Definir permissões de grupo nos diretórios
-chown :grupo1 /diretorio1
-chown :grupo2 /diretorio2
-
-# Remover permissões de leitura, escrita e execução para outros usuários
-chmod o-rwx /diretorio1
-chmod o-rwx /diretorio2
-
-# Subir arquivo de script para o GitHub
-# Certifique-se de ter configurado o Git e ter acesso ao repositório
-git init
-git add script.sh
-git commit -m "Adicionando script de provisionamento"
-git remote add origin <URL_DO_SEU_REPOSITORIO>
-git push -u origin master
+ansible-playbook -i hosts webserver.yml
